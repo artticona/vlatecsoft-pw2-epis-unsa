@@ -1,0 +1,418 @@
+--------------------------------------- remover
+
+package pw2;
+
+import java.io.IOException;
+import java.util.List;
+
+import javax.jdo.PersistenceManager;
+import javax.jdo.Query;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+public class Remove extends HttpServlet{
+
+	public void doGet(HttpServletRequest req, HttpServletResponse resp)
+			throws ServletException, IOException {
+
+		String user = req.getParameter("user");//nombre apellido o correo a eliminar
+		String pass = req.getParameter("pass");		
+
+		PersistenceManager pm = PMF.get().getPersistenceManager();
+
+
+		try{
+			Query consulta = (Query) pm.newQuery(Persona.class);
+
+			consulta.setFilter("this.user == user");//busca la tabla a modificar
+			consulta.declareParameters("String user");//
+
+			List<Persona> res = (List<Persona>) consulta.execute(user);//"a"
+	    	for (int i = 0; i < res.size(); i++) {
+		   		   if(user.equals(res.get(i).getUser())&&pass.equals(res.get(i).getPass())){
+		   			 res.get(i).setUser(" ");
+		   			res.get(i).setPass(" ");
+		   			
+		   		   }
+		   	    }
+			
+			//pm.deletePersistentAll(res);// vacea todos los datos
+			resp.getWriter().println("Se eliminado su cuenta correctamente ");
+
+
+		}catch(Exception e){
+			System.out.println(e);
+			resp.getWriter().println("Ocurrio un error, <a href='eliminar.jsp'>vuelva a intentarlo</a>");
+		}finally{
+			pm.close();
+		}
+	}
+}
+------------ consulta.class
+package pw2;
+
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.List;
+
+import javax.jdo.PersistenceManager;
+import javax.jdo.Query;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+@SuppressWarnings("serial")
+public class GetList extends HttpServlet{
+	@Override
+	protected void doGet(HttpServletRequest req, HttpServletResponse resp)
+			throws ServletException, IOException {		
+		
+		// Conexion persistente a la base de datos
+		PersistenceManager pm = PMF.get().getPersistenceManager();
+		PrintWriter out = resp.getWriter();
+		resp.setContentType("text/html");
+		
+		String bus = req.getParameter("usuario");
+		String pass = req.getParameter("password");
+		// Creo la consulta para todos los elementos
+		Query q = pm.newQuery(Persona.class);
+
+		q.setFilter("this.user == userparan");
+		q.declareParameters("String userparan");
+		
+		resp.getWriter().println("usuario es: ");
+		
+
+		
+		
+		try{
+			//obtenemos la lista de todas las personas
+			List<Persona> personas = (List<Persona>) q.execute(bus);
+		
+			out.println("<ul>");
+			for(Persona p: personas){
+				out.print("<li>");
+				out.println(p);
+			}
+			out.println("<ul>");
+		}catch(Exception e){
+			
+		}finally{
+			 q.closeAll();
+		}
+		
+	}
+}
+-------------------------------actualizar
+package pw2;
+
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.List;
+
+import javax.jdo.PersistenceManager;
+import javax.jdo.Query;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+public class Update extends HttpServlet{
+	
+	public void doGet(HttpServletRequest req, HttpServletResponse resp)
+			throws ServletException, IOException {
+		// Conexion persistente a la base de datos
+		PersistenceManager pm = PMF.get().getPersistenceManager();
+		
+		String name = req.getParameter("name");
+		String lastname = req.getParameter("lastname");
+		String email = req.getParameter("email");
+		String color = req.getParameter("color");
+		String user = req.getParameter("user");
+		String pass = req.getParameter("pass");
+		
+		 try {
+			 //Obtenemos al objeto persona por su nombre
+		   	 Query consulta = (Query) pm.newQuery(Persona.class);
+		   	 
+		   	  consulta.setFilter("this.user == user");//busca la tabla a modificar
+		   	 consulta.declareParameters("String user");//
+
+		   	 List<Persona> res = (List<Persona>) consulta.execute(user);//extramos un array con todo el reguistro
+		    	for (int i = 0; i < res.size(); i++) {
+		   		   if(user.equals(res.get(i).getUser())&&pass.equals(res.get(i).getPass())){
+		   			 res.get(i).setName(name);
+		   			res.get(i).setLastname(lastname);
+		   			res.get(i).setEmail(email);
+		   			res.get(i).setColor(color); 		   			
+		   		   }
+		   	    }
+				resp.getWriter().println("Datos actualizados correctamente ");
+			 }
+			 finally {
+			 pm.close();
+			 }
+		
+	}
+}
+----------------------------consulta
+
+<%@ page language="java" contentType="text/html; charset=ISO-8859-1"
+	pageEncoding="ISO-8859-1"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<title>Consultar en DataStore</title>
+</head>
+<body style="background:#80BFFF">
+<h1>Consultar</h1>
+	<form action="getList">
+		<input type="text" name="usuario">	
+		<input type="text" name="password">
+		<input type="submit" value="consulta">
+	</form>
+
+</body>
+</html>
+------------------------eliminar
+
+<%@ page language="java" contentType="text/html; charset=ISO-8859-1"
+	pageEncoding="ISO-8859-1"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<title>Eliminar Registros DataStore</title>
+</head>
+<body> 
+<!--Debe crear el código para eliminar registros desde DataStore-->
+<h1>Eliminar</h1>
+	<form action="remove">
+		<input type="text" name="user">	
+		<input type="text" name="pass">
+
+		<input type="submit" value="eliminar">
+	</form>
+</body>
+</html>
+-----------------------------modificar
+
+<%@ page language="java" contentType="text/html; charset=ISO-8859-1"
+	pageEncoding="ISO-8859-1"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<title>Modificar Registros DataStore</title>
+</head>
+<body> <!--Debe crear código para modificar registros desde DataStore-->
+<h1>Actualizar</h1>
+ <h3>ingrese opcion de busqueda</h3>
+	<form action="update">
+        
+		<h3>ingrese dato de busqueda para el cambio segun la opcion eleguida</h3>
+		usuario:<input type="text" name="user"><br>
+		password:<input type="text" name="pass"><br>
+		Nombre: <input type="text" name="name"><br>
+		Apellido: <input type="text" name="lastname"><br>
+		Correo: <input type="text" name="email"><br>
+		Color favorito: 
+		<select name="color">
+			<option value="rojo">Rojo</option>
+			<option value="azul">Azul</option>
+			<option value="Amarillo">Amarillo</option>
+			<option value="Negro">Negro</option>
+		</select> <br>	
+		
+		<input type="submit" value="modificar">
+	</form>
+</body>
+</html>
+
+----------------------user
+
+package pw2;
+
+import javax.jdo.annotations.IdGeneratorStrategy;
+import javax.jdo.annotations.PersistenceCapable;
+import javax.jdo.annotations.Persistent;
+import javax.jdo.annotations.PrimaryKey;
+
+import com.google.appengine.api.datastore.Key;
+
+@PersistenceCapable
+public class Persona {
+	
+	@PrimaryKey
+	@Persistent(valueStrategy = IdGeneratorStrategy.IDENTITY)
+	private Key key;
+	
+	@Persistent
+	private String user;
+	
+	@Persistent
+	private String pass;
+	
+	@Persistent
+	private String name;
+	
+	@Persistent
+	private String lastname;
+	
+	@Persistent
+	private String email;
+	
+	@Persistent
+	private String color;
+	
+	@Persistent
+	private String comentario;
+
+	public Persona(String name, String lastname, String email, String color) {
+		super();
+		this.user = " ";
+		this.pass = " ";
+		this.name = name;
+		this.lastname = lastname;
+		this.email = email;
+		this.color = color;
+		this.comentario = " ";
+	}
+	
+	public Persona(String user, String pass, String name, String lastname, String email, String color, String comentario) {
+		super();
+		this.user = user;
+		this.pass = pass;
+		this.name = name;
+		this.lastname = lastname;
+		this.email = email;
+		this.color = color;
+		this.comentario = comentario;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public String getLastname() {
+		return lastname;
+	}
+
+	public void setLastname(String lastname) {
+		this.lastname = lastname;
+	}
+
+	public String getEmail() {
+		return email;
+	}
+
+	public void setEmail(String email) {
+		this.email = email;
+	}
+
+	public String getColor() {
+		return color;
+	}
+
+	public void setColor(String color) {
+		this.color = color;
+	}
+
+	public Key getKey() {
+		return key;
+	}
+	
+	public String getComentario() {
+		return comentario;
+	}
+	
+	public void setComentario(String comentario) {
+		this.comentario = comentario;
+	}
+	
+	public String getUser() {
+		return user;
+	}
+
+	public void setUser(String user) {
+		this.user = user;
+	}
+
+	public String getPass() {
+		return pass;
+	}
+
+	public void setPass(String pass) {
+		this.pass = pass;
+	}
+
+	@Override
+	public String toString() {
+		String resp = name + " : " + lastname + " : " + email + " : " + color;  
+		return resp;
+	}
+}
+
+--------------------xml
+<?xml version="1.0" encoding="utf-8"?>
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xmlns="http://java.sun.com/xml/ns/javaee"
+xmlns:web="http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
+xsi:schemaLocation="http://java.sun.com/xml/ns/javaee
+http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd" version="2.5">
+	<servlet>
+		<servlet-name>Lab_final</servlet-name>
+		<servlet-class>pw2.Lab_finalServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>Lab_final</servlet-name>
+		<url-pattern>/lab_final</url-pattern>
+	</servlet-mapping>
+		<servlet>
+		<servlet-name>Save</servlet-name><!-- nombre del servlet -->
+		<servlet-class>pw2.Save</servlet-class>
+	</servlet>
+	
+	<servlet-mapping>
+		<servlet-name>Save</servlet-name>
+		<url-pattern>/save</url-pattern><!-- nombre con el cual el formulario designara el envio -->
+	</servlet-mapping>
+	
+	<servlet>
+      <servlet-name>GetList</servlet-name>
+      <servlet-class>pw2.GetList</servlet-class>
+   </servlet>
+   <servlet-mapping>
+      <servlet-name>GetList</servlet-name>
+      <url-pattern>/getList</url-pattern>
+   </servlet-mapping>
+   
+   	<servlet>
+      <servlet-name>Remove</servlet-name>
+      <servlet-class>pw2.Remove</servlet-class>
+   </servlet>
+   <servlet-mapping>
+      <servlet-name>Remove</servlet-name>
+      <url-pattern>/remove</url-pattern>
+   </servlet-mapping>
+   
+   	<servlet>
+      <servlet-name>Update</servlet-name>
+      <servlet-class>pw2.Update</servlet-class>
+   </servlet>
+   <servlet-mapping>
+      <servlet-name>Update</servlet-name>
+      <url-pattern>/update</url-pattern>
+   </servlet-mapping>
+	<welcome-file-list>
+		<welcome-file>index.html</welcome-file>
+	</welcome-file-list>
+</web-app>
